@@ -4,13 +4,12 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
-import org.apache.commons.validator.routines.EmailValidator;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +34,7 @@ public class Conta {
 
     @NonNull
     @NotBlank
+    @Email
     @Column(unique = true, nullable = false)
     private String email;
 
@@ -50,8 +50,8 @@ public class Conta {
     @Column(unique = true, nullable = false)
     private String chaveTransacao;
 
-    // Uma conta tem MUITAS transações
-    @OneToMany(mappedBy = "conta", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+
+    @OneToMany(mappedBy = "conta", cascade = CascadeType.ALL, fetch = FetchType.LAZY) // Uma conta tem MUITAS transações
     @JsonIgnore // Evita loop infinito na serialização
     private List<Transacao> transacoes = new ArrayList<>();
 
@@ -66,17 +66,5 @@ public class Conta {
         this.senha = senha;
         this.email = email;
         this.dataNascimento = dataNascimento;
-    }
-
-    public int getIdade() {
-        return Period.between(this.dataNascimento, LocalDate.now()).getYears();
-    }
-
-    public boolean ehMaiorDeIdade() {
-        return getIdade() >= 18;
-    }
-
-    public boolean ehUmEmailValido() {
-        return EmailValidator.getInstance().isValid(email);
     }
 }

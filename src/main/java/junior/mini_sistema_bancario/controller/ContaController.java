@@ -2,12 +2,13 @@ package junior.mini_sistema_bancario.controller;
 
 import jakarta.validation.Valid;
 import junior.mini_sistema_bancario.dto.conta.AtualizarContaDTO;
+import junior.mini_sistema_bancario.dto.conta.CriarContaDTO;
 import junior.mini_sistema_bancario.entity.Conta;
 import junior.mini_sistema_bancario.service.ContaService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/conta") // indica a rota que o controler vai atuar
@@ -20,27 +21,27 @@ public class ContaController {
     }
 
     @PostMapping
-    List<Conta> criar(@RequestBody @Valid Conta conta) {
-        return contaService.criar(conta);
+    public ResponseEntity<Conta> criar(@RequestBody @Valid CriarContaDTO conta) {
+        return ResponseEntity.ok(contaService.criar(conta));
     }
 
     @GetMapping
-    List<Conta> listarContas() {
-        return contaService.listarContas();
+    public ResponseEntity<List<Conta>> listarContas() {
+        return ResponseEntity.ok(contaService.listarContas());
     }
 
     @GetMapping("{id}")
-    Optional<Conta> procurarPorId(@PathVariable("id") Long id) {
-        return contaService.procurarPorId(id);
+    public ResponseEntity<Conta> procurarPorId(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(contaService.procurarPorId(id));
     }
 
     @PutMapping("{id}")
-    List<Conta> atualizarConta(@PathVariable("id") Long id, @RequestBody AtualizarContaDTO conta){
-        return contaService.atualizarConta(id, conta);
+    public ResponseEntity<Conta> atualizarConta(@PathVariable("id") Long id, @RequestBody @Valid AtualizarContaDTO conta){
+        return ResponseEntity.ok(contaService.atualizarConta(id, conta));
     }
 
     @DeleteMapping("{id}")
-    List<Conta> deletarConta(@PathVariable("id") Long id){
-        return contaService.deletarConta(id);
+    public ResponseEntity<List<Conta>> deletarConta(@PathVariable("id") Long id){
+        return ResponseEntity.ok(contaService.deletarConta(id));
     }
 }

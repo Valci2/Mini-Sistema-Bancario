@@ -1,14 +1,17 @@
 package junior.mini_sistema_bancario.service;
 
+import jakarta.transaction.Transactional;
 import junior.mini_sistema_bancario.dto.conta.AtualizarContaDTO;
+import junior.mini_sistema_bancario.dto.conta.CriarContaDTO;
 import junior.mini_sistema_bancario.entity.Conta;
 import junior.mini_sistema_bancario.repository.ContaRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -20,30 +23,35 @@ public class ContaService {
         this.contaRepository = contaRepository;
     }
 
-    public List<Conta> criar(Conta conta) {
+    @Transactional
+    public Conta criar(CriarContaDTO dto) {
 
         // 1. Validar email duplicado
-        if (contaRepository.existsByEmail(conta.getEmail())) {
+        if (contaRepository.existsByEmail(dto.getEmail())) {
             throw new RuntimeException("Já existe uma conta cadastrada com este email!");
         }
 
         // 2. Valida se é maior de idade
-        if (!conta.ehMaiorDeIdade()) {
-            throw new RuntimeException("Usuário deve ter pelo menos 18 anos.");
-        }
+        validarMaioridade(dto.getDataNascimento());
 
-        // 3. Valida se o email e realmente valido
-        if (!conta.ehUmEmailValido()) {
-            throw new RuntimeException("O Usuário deve adicionar um email valido.");
-        }
+        Conta conta = new Conta();
+        conta.setNome(dto.getNome());
+        conta.setSenha(dto.getSenha());
+        conta.setEmail(dto.getEmail());
+        conta.setDataNascimento(dto.getDataNascimento());
 
         // adiciona o saldo e a chave de transação unica
         conta.setSaldo(BigDecimal.ZERO);
         conta.setChaveTransacao(UUID.randomUUID().toString());
 
         // salva no repositorio
-        contaRepository.save(conta);
-        return listarContas();
+        return contaRepository.save(conta);
+    }
+
+    private void validarMaioridade(LocalDate dataNascimento) {
+        if (Period.between(dataNascimento, LocalDate.now()).getYears() < 18) {
+            throw new RuntimeException("Usuário deve ter pelo menos 18 anos.");
+        }
     }
 
     public List<Conta> listarContas() {
@@ -51,26 +59,19 @@ public class ContaService {
         return contaRepository.findAll(sort);
     }
 
-    public Optional<Conta> procurarPorId(Long id) {
-        return Optional.ofNullable(contaRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Conta não encontrada com ID: " + id)));
+    public Conta procurarPorId(Long id) {
+        return contaRepository.findById(id) .orElseThrow(() -> new IllegalArgumentException("Conta não encontrada com ID: " + id));
     }
 
-    public List<Conta> atualizarConta(Long id, AtualizarContaDTO contaAtualizada) {
+    @Transactional
+    public Conta atualizarConta(Long id, AtualizarContaDTO contaAtualizada) {
 
         // verifica se aquele id existe dentro do banco de dados
         Conta contaExistente = contaRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Conta não encontrada com ID: " + id));
 
         // Validar se o email já existe em OUTRA conta
-        if (!contaExistente.getEmail().equals(contaAtualizada.getEmail()) &&
-                contaRepository.existsByEmail(contaAtualizada.getEmail())) {
+        if (!contaExistente.getEmail().equals(contaAtualizada.getEmail()) && contaRepository.existsByEmail(contaAtualizada.getEmail())) {
             throw new RuntimeException("Este email já está sendo usado por outra conta!");
-        }
-
-        // Validar formato do email
-        Conta temp = new Conta();
-        temp.setEmail(contaAtualizada.getEmail());
-        if (!temp.ehUmEmailValido()) {
-            throw new RuntimeException("Email inválido!");
         }
 
         // 2. Atualizar apenas os campos permitidos
@@ -79,10 +80,10 @@ public class ContaService {
         contaExistente.setEmail(contaAtualizada.getEmail());
 
         // adiciona a mesma chave de transacao e o mesmo saldo.
-        contaRepository.save(contaExistente);
-        return listarContas();
+        return contaRepository.save(contaExistente);
     }
 
+    @Transactional
     public List<Conta> deletarConta(Long id) {
 
         Conta conta = contaRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Conta com ID " + id + " não encontrada"));
