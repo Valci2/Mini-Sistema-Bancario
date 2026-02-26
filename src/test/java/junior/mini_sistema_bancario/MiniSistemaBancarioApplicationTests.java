@@ -7,7 +7,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 class MiniSistemaBancarioApplicationTests {
 
     @Test
-    void contextLoads() {
+    void TestCreate() {
     }
-
 }
